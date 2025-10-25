@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:super_app/ui/pages/hero_page.dart';
 import 'theme/theme.dart';
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,9 +21,40 @@ class MyApp extends StatelessWidget {
 }
 
 class HomeScreen extends StatelessWidget {
-  void _onButtonPressed(String buttonName) {
-    print('$buttonName pressed');
+  const HomeScreen({super.key});
+
+  void _onButtonPressed(BuildContext context, String buttonName) {
+    switch (buttonName) {
+      case 'Heróis':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HeroesPage()),
+        );
+        break;
+      case 'Card Diário':
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (_) => const CardDiarioPage()),
+      // );
+        break;
+      case 'Minhas Cartas':
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (_) => const MinhasCartasPage()),
+      // );
+        break;
+      case 'Batalhar':
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (_) => const BatalharPage()),
+      // );
+        break;
+      default:
+      // Para debug - você pode remover isso depois
+        print('Botão $buttonName pressionado (não implementado)');
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +86,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildButton(BuildContext context,String text) {
     return ElevatedButton(
-      onPressed: () => _onButtonPressed(text),
+      onPressed: () => _onButtonPressed(context, text),
       style: ElevatedButton.styleFrom(
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
