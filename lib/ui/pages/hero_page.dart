@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:super_app/model/hero_model.dart';
 import 'package:super_app/service/hero_service.dart';
 import 'hero_detail_page.dart';
@@ -32,21 +33,19 @@ class _HeroesPageState extends State<HeroesPage> {
 
       print('Recebidos ${newItems.length} itens da página $pageKey');
 
-      // Verificação: mostra os primeiros nomes de cada página
       if (newItems.isNotEmpty) {
         final names = newItems.take(3).map((hero) => hero.name).toList();
         print('Amostra da página $pageKey: $names');
       }
 
-      // Se veio menos itens que o pageSize, é a última página
       final isLastPage = newItems.length < _pageSize;
 
       if (isLastPage) {
-        print('Ultima página: $pageKey');
+        print('Última página: $pageKey');
         _pagingController.appendLastPage(newItems);
       } else {
         final nextPageKey = pageKey + 1;
-        print('Página $pageKey OK! Proxima: $nextPageKey');
+        print('Página $pageKey OK! Próxima: $nextPageKey');
         _pagingController.appendPage(newItems, nextPageKey);
       }
     } catch (error) {
@@ -79,28 +78,18 @@ class _HeroesPageState extends State<HeroesPage> {
                 child: Card(
                   margin: const EdgeInsets.all(8),
                   child: ListTile(
-                    leading: Image.network(
-                      hero.imgLg,
+                    leading: CachedNetworkImage(
+                      imageUrl: hero.imgLg,
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return SizedBox(
-                          width: 50,
-                          height: 50,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.broken_image, size: 50),
+                      placeholder: (_, __) => const SizedBox(
+                        width: 50,
+                        height: 50,
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (_, __, ___) =>
+                      const Icon(Icons.broken_image, size: 50),
                     ),
                     title: Text(hero.name),
                     subtitle: Text(
@@ -111,7 +100,7 @@ class _HeroesPageState extends State<HeroesPage> {
               );
             },
             firstPageProgressIndicatorBuilder: (context) =>
-                const Center(child: CircularProgressIndicator()),
+            const Center(child: CircularProgressIndicator()),
             newPageProgressIndicatorBuilder: (context) => const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -135,10 +124,10 @@ class _HeroesPageState extends State<HeroesPage> {
               ],
             ),
             noItemsFoundIndicatorBuilder: (context) =>
-                const Center(child: Text('Nenhum herói encontrado')),
+            const Center(child: Text('Nenhum herói encontrado')),
             noMoreItemsIndicatorBuilder: (context) => const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Center(child: Text(' Todos os heróis carregados!')),
+              child: Center(child: Text('Todos os heróis carregados!')),
             ),
           ),
         ),

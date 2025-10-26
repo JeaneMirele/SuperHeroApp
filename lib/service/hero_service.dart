@@ -14,6 +14,9 @@ class HeroService {
         return _getLocalPage(page, limit);
       }
 
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.clear();
+
       final cachedHeroes = await _getAllHeroesFromCache();
       if (cachedHeroes.isNotEmpty) {
         print('Carregando ${cachedHeroes.length} heróis do cache persistente');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:super_app/ui/pages/card.dart';
 import 'package:super_app/ui/pages/hero_page.dart';
 import 'theme/theme.dart';
 void main() {
@@ -32,10 +33,10 @@ class HomeScreen extends StatelessWidget {
         );
         break;
       case 'Card Diário':
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const CardDiarioPage()),
-      // );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CardPage()),
+        );
         break;
       case 'Minhas Cartas':
       // Navigator.push(
@@ -63,7 +64,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         foregroundColor: textButtonColor,
-        title: Text('Heroes',
+        title: Text('Super Trunfo',
             style: TextStyle(color: textButtonColor)),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
