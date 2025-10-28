@@ -19,6 +19,7 @@ class _CardPageState extends State<CardPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   int _collectionCount = 0;
+  bool _cardAdded = false;
 
   @override
   void initState() {
@@ -54,12 +55,13 @@ class _CardPageState extends State<CardPage> {
   Future<void> _addToCollection() async {
     if (_dailyCard == null) return;
 
-    final success = await _dailyCardService.addToCollection(_dailyCard!.hero);
+    final success = await _dailyCardService.addToCollection();
 
     if (success) {
-      // Atualiza a contagem e marca como coletado
+
       final count = await _dailyCardService.getCollectionCount();
       setState(() {
+        _cardAdded = true;
         _collectionCount = count;
         _dailyCard = CardModel(
           date: _dailyCard!.date,
@@ -199,13 +201,14 @@ class _CardPageState extends State<CardPage> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Volte amanhã para um novo card!',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
+                       if(_cardAdded)
+                         const SizedBox(height: 4),
+                         Text(
+                           'Volte amanhã para um novo card!',
+                           style: textTheme.bodySmall?.copyWith(
+                             color: colorScheme.onSurface.withOpacity(0.7),
+                           ),
+                         ),
                       ],
                     ),
                   ),
@@ -216,7 +219,7 @@ class _CardPageState extends State<CardPage> {
 
           const SizedBox(height: 24),
 
-          // Card do Herói no estilo Super Trunfo
+
           Card(
             elevation: 8,
             shape: RoundedRectangleBorder(
@@ -227,7 +230,7 @@ class _CardPageState extends State<CardPage> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // Nome do Herói
+
                   Text(
                     hero.name,
                     style: textTheme.headlineSmall?.copyWith(
@@ -239,7 +242,7 @@ class _CardPageState extends State<CardPage> {
 
                   const SizedBox(height: 20),
 
-                  // Imagem
+
                   Hero(
                     tag: 'daily-card-${hero.id}',
                     child: Container(
@@ -285,7 +288,6 @@ class _CardPageState extends State<CardPage> {
 
           const SizedBox(height: 24),
 
-          // Botão de Adicionar à Biblioteca
           if (!_dailyCard!.collected && _collectionCount < 15)
             SizedBox(
               width: double.infinity,

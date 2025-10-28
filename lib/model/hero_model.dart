@@ -31,41 +31,71 @@ class HeroModel {
     required this.imgLg,
   });
 
+  factory HeroModel.fromJsonCard(Map<String, dynamic> json) {
+    print('Campos no JSON: ${json}');
+    return HeroModel(
+      id: json['id'],
+      name: json['name']?.toString() ?? 'Sem nome',
+      intelligence: json['intelligence'],
+      strength: json['strength'],
+      speed: json['speed'],
+      durability: json['durability'],
+      power: json['power'],
+      combat: json['combat'],
+      gender: json['gender']?.toString() ?? 'Desconhecido',
+      race: json['race']?.toString() ?? 'Desconhecida',
+      eyeColor: json['eyeColor']?.toString() ?? 'Desconhecida',
+      hairColor: json['hairColor']?.toString() ?? 'Desconhecida',
+      imgXs: json['imgXs']?.toString() ?? '',
+      imgLg: json['imgLg']?.toString() ?? '',
+    );
+  }
+
   factory HeroModel.fromJson(Map<String, dynamic> json) {
+    final powerstats = json['powerstats'] ?? {};
+    final appearance = json['appearance'] ?? {};
+    final images = json['images'] ?? {};
+
     return HeroModel(
       id: _parseInt(json['id']),
       name: json['name']?.toString() ?? 'Sem nome',
-      intelligence: _parsePowerstat(json['powerstats']?['intelligence']),
-      strength: _parsePowerstat(json['powerstats']?['strength']),
-      speed: _parsePowerstat(json['powerstats']?['speed']),
-      durability: _parsePowerstat(json['powerstats']?['durability']),
-      power: _parsePowerstat(json['powerstats']?['power']),
-      combat: _parsePowerstat(json['powerstats']?['combat']),
-      gender: json['appearance']?['gender']?.toString() ?? 'Desconhecido',
-      race: json['appearance']?['race']?.toString() ?? 'Desconhecida',
-      eyeColor: json['appearance']?['eyeColor']?.toString() ?? 'Desconhecida',
-      hairColor: json['appearance']?['hairColor']?.toString() ?? 'Desconhecida',
-      imgXs: json['images']?['xs']?.toString() ?? '',
-      imgLg: json['images']?['lg']?.toString() ?? '',
+      intelligence: _parsePowerstat(powerstats['intelligence']),
+      strength: _parsePowerstat(powerstats['strength']),
+      speed: _parsePowerstat(powerstats['speed']),
+      durability: _parsePowerstat(powerstats['durability']),
+      power: _parsePowerstat(powerstats['power']),
+      combat: _parsePowerstat(powerstats['combat']),
+      gender: _parseString(appearance['gender']),
+      race: _parseString(appearance['race']),
+      eyeColor: _parseString(appearance['eyeColor']),
+      hairColor: _parseString(appearance['hairColor']),
+      imgXs: _parseString(images['xs']),
+      imgLg: _parseString(images['lg']),
     );
+  }
+
+  static String _parseString(dynamic value) {
+    if (value == null) return 'Desconhecido';
+    if (value is String) {
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? 'Desconhecido' : trimmed;
+    }
+    return value.toString();
   }
 
   static int _parseInt(dynamic value) {
     if (value == null) return 0;
     if (value is int) return value;
-    if (value is String) return int.tryParse(value) ?? 0;
-    return 0;
+    if (value is String) {
+      final cleaned = value.trim();
+      if (cleaned.isEmpty || cleaned.toLowerCase() == 'null') return 0;
+      return int.tryParse(cleaned) ?? 0;
+    }
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   static int _parsePowerstat(dynamic value) {
-    if (value == null) return 0;
-    if (value is int) return value;
-    if (value is String) {
-
-      if (value.toLowerCase() == 'null') return 0;
-      return int.tryParse(value) ?? 0;
-    }
-    return 0;
+    return _parseInt(value).clamp(0, 100);
   }
 
   Map<String, dynamic> toJson() {

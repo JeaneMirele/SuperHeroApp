@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:super_app/ui/pages/card.dart';
 import 'package:super_app/ui/pages/hero_page.dart';
+import 'package:super_app/ui/pages/my_cards.dart';
 import 'theme/theme.dart';
 void main() {
   runApp(MyApp());
@@ -39,10 +40,12 @@ class HomeScreen extends StatelessWidget {
         );
         break;
       case 'Minhas Cartas':
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const MinhasCartasPage()),
-      // );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+            const MyCardsPage()),
+        );
         break;
       case 'Batalhar':
       // Navigator.push(

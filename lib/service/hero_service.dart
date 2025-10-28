@@ -25,13 +25,13 @@ class HeroService {
       }
 
 
-      print('Buscando TODOS os heróis da API...');
+
       final url = '$baseUrl/heroes';
       final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        print('Total de heróis encontrados: ${data.length}');
+
 
 
         _allHeroesCache = [];
@@ -44,7 +44,7 @@ class HeroService {
           }
         }
 
-        // Salva TODOS no SharedPreferences para uso futuro
+
         await _saveAllHeroesToCache(_allHeroesCache!);
 
         return _getLocalPage(page, limit);
@@ -54,7 +54,7 @@ class HeroService {
     } catch (e) {
       print('Erro na requisição: $e');
 
-      // Tenta buscar do SharedPreferences como fallback
+
       final cachedHeroes = await _getAllHeroesFromCache();
       if (cachedHeroes.isNotEmpty) {
         print('Usando cache persistente como fallback: ${cachedHeroes.length} heróis');
@@ -73,7 +73,7 @@ class HeroService {
 
     final startIndex = (page - 1) * limit;
     if (startIndex >= _allHeroesCache!.length) {
-      return []; // Fim da lista
+      return [];
     }
 
     final endIndex = (startIndex + limit) < _allHeroesCache!.length
@@ -84,7 +84,7 @@ class HeroService {
 
     print('Página $page: itens $startIndex-${endIndex-1} de ${_allHeroesCache!.length}');
 
-    // Debug: mostra os PRIMEIROS heróis de CADA página
+
     if (pageItems.isNotEmpty) {
       final firstHero = pageItems.first.name;
       final lastHero = pageItems.last.name;
@@ -94,7 +94,7 @@ class HeroService {
     return pageItems;
   }
 
-  // Salva TODOS os heróis no SharedPreferences
+
   Future<void> _saveAllHeroesToCache(List<HeroModel> heroes) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -108,7 +108,6 @@ class HeroService {
     }
   }
 
-  // Busca TODOS os heróis do SharedPreferences
   Future<List<HeroModel>> _getAllHeroesFromCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
