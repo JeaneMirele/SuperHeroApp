@@ -278,8 +278,6 @@ class _MyCardDetailPageState extends State<MyCardDetailPage> {
 
                   const SizedBox(height: 32),
 
-                  // Botão Abandonar (apenas se veio da coleção)
-                  if (widget.isFromCollection)
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(

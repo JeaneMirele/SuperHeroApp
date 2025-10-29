@@ -11,6 +11,7 @@ class CardService {
   static const String _dailyCardKey = 'daily_card';
   static const String _collectionKey = 'my_cards';
   static const int _maxCards = 15;
+  static const String _abandonedCardsKey = 'abandoned_cards';
 
 
   final HeroService _heroService;
@@ -102,11 +103,70 @@ class CardService {
 
     return true;
   }
+  Future<void> _addToAbandonedCards(int heroId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final abandonedData = prefs.getStringList(_abandonedCardsKey) ?? [];
 
+    if (!abandonedData.contains(heroId.toString())) {
+      abandonedData.add(heroId.toString());
+      await prefs.setStringList(_abandonedCardsKey, abandonedData);
+      print('Herói $heroId adicionado às cartas abandonadas');
+    }
+  }
+
+  // NOVO: Método para verificar se é uma carta abandonada
+  Future<bool> _isAbandonedCard(int heroId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final abandonedData = prefs.getStringList(_abandonedCardsKey) ?? [];
+    return abandonedData.contains(heroId.toString());
+  }
+
+  // MODIFICADO: Agora verifica cartas abandonadas
+  Future<HeroModel?> _getRandomHero() async {
+    try {
+      final randomPage = Random().nextInt(10) + 1;
+      final heroes = await _heroService.fetchHeroesPage(randomPage, 10);
+
+      if (heroes.isNotEmpty) {
+        // Filtra heróis que não estão abandonados
+        final availableHeroes = <HeroModel>[];
+
+        for (final hero in heroes) {
+          final isAbandoned = await _isAbandonedCard(hero.id);
+          if (!isAbandoned) {
+            availableHeroes.add(hero);
+          }
+        }
+
+        print('Heróis disponíveis: ${availableHeroes.length}');
+
+        if (availableHeroes.isNotEmpty) {
+          final randomIndex = Random().nextInt(availableHeroes.length);
+          return availableHeroes[randomIndex];
+        } else {
+          print('Todos os heróis disponíveis foram abandonados');
+          // Se todos foram abandonados, reseta a lista
+          await _resetAbandonedCards();
+          return await _getRandomHero(); // Tenta novamente
+        }
+      }
+    } catch (e) {
+      print('Erro ao buscar herói aleatório: $e');
+    }
+    return null;
+  }
+
+  // NOVO: Reset das cartas abandonadas
+  Future<void> _resetAbandonedCards() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_abandonedCardsKey);
+    print('Lista de cartas abandonadas resetada');
+  }
+
+  // MODIFICADO: Ao remover da coleção, marca como abandonada
   Future<bool> removeFromCollection(int heroId) async {
     final prefs = await SharedPreferences.getInstance();
     final collectionData = prefs.getStringList(_collectionKey) ?? [];
-
 
     final updatedCollection = <String>[];
     bool removed = false;
@@ -118,6 +178,8 @@ class CardService {
           updatedCollection.add(item);
         } else {
           removed = true;
+          // NOVO: Adiciona às cartas abandonadas
+          await _addToAbandonedCards(heroId);
         }
       } catch (e) {
         print('Erro ao processar item da coleção: $e');
@@ -127,7 +189,7 @@ class CardService {
 
     if (removed) {
       await prefs.setStringList(_collectionKey, updatedCollection);
-      print('Herói $heroId removido da coleção');
+      print('Herói $heroId removido da coleção e marcado como abandonado');
       return true;
     }
 
@@ -158,23 +220,6 @@ class CardService {
     final prefs = await SharedPreferences.getInstance();
     final collectionData = prefs.getStringList(_collectionKey) ?? [];
     return collectionData.length;
-  }
-
-
-  Future<HeroModel?> _getRandomHero() async {
-    try {
-
-      final randomPage = Random().nextInt(10) + 1;
-      final heroes = await _heroService.fetchHeroesPage(randomPage, 10);
-
-      if (heroes.isNotEmpty) {
-        final randomIndex = Random().nextInt(heroes.length);
-        return heroes[randomIndex];
-      }
-    } catch (e) {
-      print('Erro ao buscar herói aleatório: $e');
-    }
-    return null;
   }
 
 

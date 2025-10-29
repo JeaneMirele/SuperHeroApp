@@ -32,7 +32,7 @@ class HeroModel {
   });
 
   factory HeroModel.fromJsonCard(Map<String, dynamic> json) {
-    print('Campos no JSON: ${json}');
+
     return HeroModel(
       id: json['id'],
       name: json['name']?.toString() ?? 'Sem nome',
@@ -48,29 +48,6 @@ class HeroModel {
       hairColor: json['hairColor']?.toString() ?? 'Desconhecida',
       imgXs: json['imgXs']?.toString() ?? '',
       imgLg: json['imgLg']?.toString() ?? '',
-    );
-  }
-
-  factory HeroModel.fromJson(Map<String, dynamic> json) {
-    final powerstats = json['powerstats'] ?? {};
-    final appearance = json['appearance'] ?? {};
-    final images = json['images'] ?? {};
-
-    return HeroModel(
-      id: _parseInt(json['id']),
-      name: json['name']?.toString() ?? 'Sem nome',
-      intelligence: _parsePowerstat(powerstats['intelligence']),
-      strength: _parsePowerstat(powerstats['strength']),
-      speed: _parsePowerstat(powerstats['speed']),
-      durability: _parsePowerstat(powerstats['durability']),
-      power: _parsePowerstat(powerstats['power']),
-      combat: _parsePowerstat(powerstats['combat']),
-      gender: _parseString(appearance['gender']),
-      race: _parseString(appearance['race']),
-      eyeColor: _parseString(appearance['eyeColor']),
-      hairColor: _parseString(appearance['hairColor']),
-      imgXs: _parseString(images['xs']),
-      imgLg: _parseString(images['lg']),
     );
   }
 

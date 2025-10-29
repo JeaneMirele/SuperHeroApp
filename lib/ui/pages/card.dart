@@ -58,10 +58,9 @@ class _CardPageState extends State<CardPage> {
     final success = await _dailyCardService.addToCollection();
 
     if (success) {
-
+      _cardAdded = true;
       final count = await _dailyCardService.getCollectionCount();
       setState(() {
-        _cardAdded = true;
         _collectionCount = count;
         _dailyCard = CardModel(
           date: _dailyCard!.date,
