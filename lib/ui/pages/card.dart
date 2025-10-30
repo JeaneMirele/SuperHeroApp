@@ -4,7 +4,7 @@ import 'package:super_app/model/hero_model.dart';
 import 'package:super_app/service/card_service.dart';
 import 'package:super_app/service/hero_service.dart';
 import 'package:primer_progress_bar/primer_progress_bar.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CardPage extends StatefulWidget {
   const CardPage({super.key});
@@ -174,7 +174,6 @@ class _CardPageState extends State<CardPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-
           Card(
             elevation: 4,
             shape: RoundedRectangleBorder(
@@ -201,14 +200,13 @@ class _CardPageState extends State<CardPage> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                       if(_cardAdded)
-                         const SizedBox(height: 4),
-                         Text(
-                           'Volte amanhã para um novo card!',
-                           style: textTheme.bodySmall?.copyWith(
-                             color: colorScheme.onSurface.withOpacity(0.7),
-                           ),
-                         ),
+                        if (_cardAdded) const SizedBox(height: 4),
+                        Text(
+                          'Volte amanhã para um novo card!',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -216,10 +214,7 @@ class _CardPageState extends State<CardPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-
           Card(
             elevation: 8,
             shape: RoundedRectangleBorder(
@@ -230,7 +225,6 @@ class _CardPageState extends State<CardPage> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-
                   Text(
                     hero.name,
                     style: textTheme.headlineSmall?.copyWith(
@@ -239,7 +233,6 @@ class _CardPageState extends State<CardPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-
                   const SizedBox(height: 20),
 
 
@@ -254,18 +247,13 @@ class _CardPageState extends State<CardPage> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          hero.imgLg,
+                        child: CachedNetworkImage(
+                          imageUrl: hero.imgLg,
                           fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                color: colorScheme.primary,
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) => Center(
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          errorWidget: (context, url, error) => Center(
                             child: Icon(
                               Icons.person,
                               size: 80,
@@ -279,7 +267,6 @@ class _CardPageState extends State<CardPage> {
 
                   const SizedBox(height: 24),
 
-                  // Powerstats
                   ..._buildPowerstats(context, hero),
                 ],
               ),
@@ -422,7 +409,7 @@ class _CardPageState extends State<CardPage> {
                 ),
               ],
               maxTotalValue: 100,
-              ),
+            ),
           ],
         ),
       );

@@ -90,7 +90,7 @@ class _MyCardsPageState extends State<MyCardsPage> {
               },
             ),
 
-          // Contador de cartas
+
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Center(

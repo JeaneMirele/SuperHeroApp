@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:super_app/service/hero_service.dart';
 import '../../model/card_model.dart';
@@ -300,12 +301,18 @@ class _BattlePageState extends State<BattlePage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    hero.imgLg.isNotEmpty ? hero.imgLg : hero.imgXs,
-                    width: 100,
-                    height: 100,
+                  child: CachedNetworkImage(
+                    imageUrl: hero.imgLg,
+                    width: 150,
+                    height: 150,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 100),
+                    placeholder: (_, __) => const SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    errorWidget: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 50),
                   ),
                 ),
                 const SizedBox(width: 16),

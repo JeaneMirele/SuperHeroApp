@@ -232,7 +232,6 @@ Future<bool> addRandomCardToCollectionForTesting() async {
   return false;
 }
 
-
 Future<void> clearCollectionForTesting() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove(_collectionKey);

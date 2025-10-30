@@ -219,7 +219,7 @@ class _MyCardDetailPageState extends State<MyCardDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Powerstats
+
                   Card(
                     color: colorScheme.surface,
                     elevation: 2,
