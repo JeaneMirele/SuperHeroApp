@@ -6,23 +6,22 @@ import 'package:super_app/model/card_model.dart';
 import 'package:super_app/model/hero_model.dart';
 import 'package:super_app/service/hero_service.dart';
 
-
 class CardService {
   static const String _dailyCardKey = 'daily_card';
   static const String _collectionKey = 'my_cards';
   static const int _maxCards = 15;
   static const String _abandonedCardsKey = 'abandoned_cards';
 
-
   final HeroService _heroService;
 
   CardService(this._heroService);
 
-  Future<CardModel?> getDailyCard() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day);
 
+  Future<CardModel?> getDailyCard({DateTime? now}) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final today = now ?? DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
 
     final savedData = prefs.getString(_dailyCardKey);
 
@@ -34,12 +33,10 @@ class CardService {
         savedCard.date.day,
       );
 
-
       if (savedDate == startOfDay) {
         return savedCard;
       }
     }
-
 
     try {
       final randomHero = await _getRandomHero();
@@ -49,8 +46,6 @@ class CardService {
           hero: randomHero,
           collected: false,
         );
-
-
 
         await prefs.setString(_dailyCardKey, jsonEncode(newCard.toJson()));
         return newCard;
@@ -63,10 +58,11 @@ class CardService {
     return null;
   }
 
-  Future<bool> addToCollection() async {
+
+  Future<bool> addToCollection({DateTime? now}) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final dailyCard = await getDailyCard();
+    final dailyCard = await getDailyCard(now: now);
     if (dailyCard == null) {
       print('Nenhum card diário disponível');
       return false;
@@ -77,20 +73,14 @@ class CardService {
       return false;
     }
 
-
     final currentCards = await getCollectionCount();
     if (currentCards >= _maxCards) {
       print('Você já atingiu o limite de 15 cartas.');
       return false;
     }
 
-
     final collectionData = prefs.getStringList(_collectionKey) ?? [];
-
-
-    collectionData.add(jsonEncode(dailyCard.hero.toJson()));
-
-
+    collectionData.add(jsonEncode(dailyCard.toJson()));
     await prefs.setStringList(_collectionKey, collectionData);
 
     final updatedCard = CardModel(
@@ -98,11 +88,11 @@ class CardService {
       hero: dailyCard.hero,
       collected: true,
     );
-
-      await prefs.setString(_dailyCardKey, jsonEncode(updatedCard.toJson()));
+    await prefs.setString(_dailyCardKey, jsonEncode(updatedCard.toJson()));
 
     return true;
   }
+
   Future<void> _addToAbandonedCards(int heroId) async {
     final prefs = await SharedPreferences.getInstance();
     final abandonedData = prefs.getStringList(_abandonedCardsKey) ?? [];
@@ -110,44 +100,33 @@ class CardService {
     if (!abandonedData.contains(heroId.toString())) {
       abandonedData.add(heroId.toString());
       await prefs.setStringList(_abandonedCardsKey, abandonedData);
-      print('Herói $heroId adicionado às cartas abandonadas');
     }
   }
 
-  // NOVO: Método para verificar se é uma carta abandonada
   Future<bool> _isAbandonedCard(int heroId) async {
     final prefs = await SharedPreferences.getInstance();
     final abandonedData = prefs.getStringList(_abandonedCardsKey) ?? [];
     return abandonedData.contains(heroId.toString());
   }
 
-  // MODIFICADO: Agora verifica cartas abandonadas
   Future<HeroModel?> _getRandomHero() async {
     try {
       final randomPage = Random().nextInt(10) + 1;
       final heroes = await _heroService.fetchHeroesPage(randomPage, 10);
 
       if (heroes.isNotEmpty) {
-        // Filtra heróis que não estão abandonados
         final availableHeroes = <HeroModel>[];
-
         for (final hero in heroes) {
-          final isAbandoned = await _isAbandonedCard(hero.id);
-          if (!isAbandoned) {
+          if (!(await _isAbandonedCard(hero.id))) {
             availableHeroes.add(hero);
           }
         }
 
-        print('Heróis disponíveis: ${availableHeroes.length}');
-
         if (availableHeroes.isNotEmpty) {
-          final randomIndex = Random().nextInt(availableHeroes.length);
-          return availableHeroes[randomIndex];
+          return availableHeroes[Random().nextInt(availableHeroes.length)];
         } else {
-          print('Todos os heróis disponíveis foram abandonados');
-          // Se todos foram abandonados, reseta a lista
           await _resetAbandonedCards();
-          return await _getRandomHero(); // Tenta novamente
+          return await _getRandomHero();
         }
       }
     } catch (e) {
@@ -156,76 +135,109 @@ class CardService {
     return null;
   }
 
-  // NOVO: Reset das cartas abandonadas
   Future<void> _resetAbandonedCards() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_abandonedCardsKey);
-    print('Lista de cartas abandonadas resetada');
   }
 
-  // MODIFICADO: Ao remover da coleção, marca como abandonada
   Future<bool> removeFromCollection(int heroId) async {
     final prefs = await SharedPreferences.getInstance();
     final collectionData = prefs.getStringList(_collectionKey) ?? [];
-
     final updatedCollection = <String>[];
     bool removed = false;
 
     for (final item in collectionData) {
-      try {
-        final heroJson = jsonDecode(item);
-        if (heroJson['id'] != heroId) {
-          updatedCollection.add(item);
-        } else {
-          removed = true;
-          // NOVO: Adiciona às cartas abandonadas
-          await _addToAbandonedCards(heroId);
-        }
-      } catch (e) {
-        print('Erro ao processar item da coleção: $e');
+      final cardJson = jsonDecode(item);
+      if (cardJson['hero'] != null && cardJson['hero']['id'] != heroId) {
         updatedCollection.add(item);
+      } else {
+        removed = true;
       }
     }
 
     if (removed) {
       await prefs.setStringList(_collectionKey, updatedCollection);
+      await _addToAbandonedCards(heroId);
+
+
+      final dailyCard = await getDailyCard();
+      if (dailyCard != null && dailyCard.hero.id == heroId) {
+
+        final updatedDailyCard = CardModel(
+          date: dailyCard.date,
+          hero: dailyCard.hero,
+          collected: false,
+        );
+        await prefs.setString(_dailyCardKey, jsonEncode(updatedDailyCard.toJson()));
+        print('Carta diária ${heroId} resetada para não coletada.');
+      }
+
+
       print('Herói $heroId removido da coleção e marcado como abandonado');
       return true;
     }
 
-    print('Herói $heroId não encontrado na coleção');
     return false;
   }
 
-  Future<List<HeroModel>> getCollection() async {
+  Future<List<CardModel>> getCollection() async {
     final prefs = await SharedPreferences.getInstance();
     final collectionData = prefs.getStringList(_collectionKey) ?? [];
+    final cards = <CardModel>[];
 
-    final heroes = <HeroModel>[];
     for (final item in collectionData) {
       try {
-        final heroJson = jsonDecode(item);
-        heroes.add(HeroModel.fromJsonCard(heroJson));
+        cards.add(CardModel.fromJson(jsonDecode(item)));
       } catch (e) {
-        print('Erro ao decodificar herói da coleção: $e');
+        print('Erro ao decodificar carta da coleção: $e');
       }
     }
-
-    heroes.sort((a, b) => a.id.compareTo(b.id));
-
-    return heroes;
+    cards.sort((a, b) => a.hero.id.compareTo(b.hero.id));
+    return cards;
   }
 
   Future<int> getCollectionCount() async {
     final prefs = await SharedPreferences.getInstance();
-    final collectionData = prefs.getStringList(_collectionKey) ?? [];
-    return collectionData.length;
+    return prefs.getStringList(_collectionKey)?.length ?? 0;
   }
-
 
   Future<bool> hasCollectedToday() async {
     final card = await getDailyCard();
     return card?.collected ?? false;
   }
+
+Future<bool> addRandomCardToCollectionForTesting() async {
+  final prefs = await SharedPreferences.getInstance();
+  final currentCount = await getCollectionCount();
+
+  if (currentCount >= _maxCards) {
+    print(
+        'DEBUG: Coleção já está cheia. Não é possível adicionar mais cartas.');
+    return false;
+  }
+  final randomHero = await _getRandomHero();
+  if (randomHero != null) {
+    final newCard = CardModel(
+      date: DateTime.now(),
+      hero: randomHero,
+      collected: true,
+    );
+
+    final collectionData = prefs.getStringList(_collectionKey) ?? [];
+    collectionData.add(jsonEncode(newCard.toJson()));
+    await prefs.setStringList(_collectionKey, collectionData);
+
+    print('DEBUG: Carta ${randomHero.name} adicionada à coleção.');
+    return true;
+  }
+  return false;
+}
+
+
+Future<void> clearCollectionForTesting() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove(_collectionKey);
+  print('DEBUG: Todas as cartas foram removidas da coleção.');
+}
 
 }

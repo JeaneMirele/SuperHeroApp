@@ -20,7 +20,6 @@ class CardModel {
   }
 
   factory CardModel.fromJson(Map<String, dynamic> json) {
-    print({json});
     return CardModel(
       date: DateTime.parse(json['date']),
       hero: HeroModel.fromJsonCard(json['hero']),

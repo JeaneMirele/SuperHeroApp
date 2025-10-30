@@ -29,7 +29,7 @@ class _HeroesPageState extends State<HeroesPage> {
     try {
       print('Solicitando página: $pageKey');
 
-      final newItems = await _heroService.fetchHeroesPage(pageKey, _pageSize, forceRefresh: true);
+      final newItems = await _heroService.fetchHeroesPage(pageKey, _pageSize);
 
       print('Recebidos ${newItems.length} itens da página $pageKey');
 

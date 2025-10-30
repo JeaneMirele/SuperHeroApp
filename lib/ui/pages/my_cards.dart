@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:super_app/model/hero_model.dart';
 import 'package:super_app/service/card_service.dart';
+import 'package:super_app/ui/pages/debug_page.dart';
 import 'package:super_app/ui/pages/my_cards_deital.dart';
+import '../../model/card_model.dart';
 import '../../service/hero_service.dart';
 
 
@@ -15,7 +18,7 @@ class MyCardsPage extends StatefulWidget {
 
 class _MyCardsPageState extends State<MyCardsPage> {
   final CardService _cardService = CardService(HeroService());
-  List<HeroModel> _myCards = [];
+  List<CardModel> _myCards = [];
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -27,6 +30,7 @@ class _MyCardsPageState extends State<MyCardsPage> {
 
   Future<void> _loadMyCards() async {
     try {
+      if (!mounted) return;
       setState(() {
         _isLoading = true;
         _errorMessage = '';
@@ -34,6 +38,7 @@ class _MyCardsPageState extends State<MyCardsPage> {
 
       final cards = await _cardService.getCollection();
 
+      if (!mounted) return;
       setState(() {
         _myCards = cards;
         _isLoading = false;
@@ -42,6 +47,7 @@ class _MyCardsPageState extends State<MyCardsPage> {
       print('Carregadas ${_myCards.length} cartas da coleção');
     } catch (error) {
       print('ERRO ao carregar cartas: $error');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = 'Erro ao carregar suas cartas';
@@ -57,6 +63,7 @@ class _MyCardsPageState extends State<MyCardsPage> {
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
+        // 1. O TÍTULO FICA SOZINHO AQUI
         title: Text(
           'Minhas Cartas',
           style: textTheme.titleLarge?.copyWith(
@@ -66,7 +73,26 @@ class _MyCardsPageState extends State<MyCardsPage> {
         ),
         backgroundColor: colorScheme.primary,
         iconTheme: IconThemeData(color: colorScheme.onPrimary),
+
+        // 2. A LISTA DE AÇÕES (BOTÕES) VEM DEPOIS, COMO UM PARÂMETRO DO APPBAR
         actions: [
+          // Botão de depuração que só aparece em modo de desenvolvimento
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.science_outlined),
+              tooltip: 'Ferramentas de Teste',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DebugPage()),
+                ).then((_) {
+                  // Recarrega as cartas quando voltar da tela de debug
+                  _loadMyCards();
+                });
+              },
+            ),
+
+          // Contador de cartas
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Center(
@@ -102,76 +128,11 @@ class _MyCardsPageState extends State<MyCardsPage> {
     }
 
     if (_errorMessage.isNotEmpty) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: colorScheme.error,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _errorMessage,
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadMyCards,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-            ),
-            child: const Text('Tentar novamente'),
-          ),
-        ],
-      );
+      return _buildErrorBody(colorScheme, textTheme);
     }
 
     if (_myCards.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.collections_outlined,
-              size: 64,
-              color: colorScheme.onSurface.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhuma carta na coleção',
-              style: textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Text(
-                'Volte todos os dias para coletar novas cartas!',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-              ),
-              child: const Text('Voltar para o Card Diário'),
-            ),
-          ],
-        ),
-      );
+      return _buildEmptyBody(colorScheme, textTheme);
     }
 
     return RefreshIndicator(
@@ -182,29 +143,36 @@ class _MyCardsPageState extends State<MyCardsPage> {
         padding: const EdgeInsets.all(8),
         itemCount: _myCards.length,
         itemBuilder: (context, index) {
-          final hero = _myCards[index];
-          return GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MyCardDetailPage(
-                hero: hero,
-                isFromCollection: true,
-              ),
-            ),
-          ).then((removed) {
-            if (removed == true) {
-              _loadMyCards();
-            }
-          }),
-         child: _buildHeroCard(hero, colorScheme, textTheme, index),
-        );
-      },
-    ),
-  );
-}
+          final card = _myCards[index];
+          final hero = card.hero;
 
-  Widget _buildHeroCard(HeroModel hero, ColorScheme colorScheme, TextTheme textTheme, int index) {
+          return GestureDetector(
+            onTap: () =>
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        MyCardDetailPage(
+                          hero: hero,
+                          isFromCollection: true,
+                        ),
+                  ),
+                ).then((removed) {
+                  if (removed == true) {
+                    _loadMyCards();
+                  }
+                }),
+            child: _buildHeroCard(card, colorScheme, textTheme, index),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeroCard(CardModel card, ColorScheme colorScheme,
+      TextTheme textTheme, int index) {
+    final hero = card.hero;
+
     return Card(
       margin: const EdgeInsets.all(8),
       color: colorScheme.surface,
@@ -213,13 +181,15 @@ class _MyCardsPageState extends State<MyCardsPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => MyCardDetailPage(hero: hero)),
-        ),
+        onTap: () =>
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => MyCardDetailPage(hero: hero)),
+            ),
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 8),
           leading: _buildHeroImage(hero, colorScheme),
           title: Text(
             hero.name,
@@ -296,33 +266,84 @@ class _MyCardsPageState extends State<MyCardsPage> {
             width: 50,
             height: 50,
             fit: BoxFit.cover,
-            placeholder: (_, __) => Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-              ),
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: colorScheme.primary,
+            placeholder: (_, __) =>
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                  ),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            errorWidget: (_, __, ___) => Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-              ),
-              child: Icon(
-                Icons.person_outline,
-                size: 24,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
+            errorWidget: (_, __, ___) =>
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                  ),
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 24,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBody(ColorScheme colorScheme, TextTheme textTheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: colorScheme.error),
+          const SizedBox(height: 16),
+          Text(_errorMessage, style: textTheme.headlineSmall?.copyWith(
+              color: colorScheme.onBackground)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadMyCards,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
+            child: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyBody(ColorScheme colorScheme, TextTheme textTheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.collections_outlined, size: 64,
+              color: colorScheme.onSurface.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          Text('Nenhuma carta na coleção',
+              style: textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.7))),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              'Volte todos os dias para coletar novas cartas!',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6)),
+            ),
+          ),
+        ],
       ),
     );
   }

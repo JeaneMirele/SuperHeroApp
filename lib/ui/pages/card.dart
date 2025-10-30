@@ -40,6 +40,7 @@ class _CardPageState extends State<CardPage> {
       setState(() {
         _dailyCard = card;
         _collectionCount = count;
+        _cardAdded = card?.collected ?? false;
       });
     } catch (e) {
       setState(() {
@@ -173,7 +174,7 @@ class _CardPageState extends State<CardPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Header informativo
+
           Card(
             elevation: 4,
             shape: RoundedRectangleBorder(

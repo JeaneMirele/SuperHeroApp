@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_app/model/hero_model.dart';
@@ -6,93 +7,65 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 class HeroService {
   final String baseUrl = "http://10.0.2.2:3000";
-  List<HeroModel>? _allHeroesCache;
+  List<HeroModel> _allHeroesCache = [];
 
-  Future<List<HeroModel>> fetchHeroesPage(int page, int limit, {bool forceRefresh = false}) async {
-    try {
+  Future<List<HeroModel>> fetchHeroesPage(int page, int limit) async {
+    final online = await _hasConnection();
 
-      if (!forceRefresh && _allHeroesCache != null) {
-        return _getLocalPage(page, limit);
-      }
+    if (online) {
+      try {
+        final url = '$baseUrl/heroes?_page=$page&_limit=$limit';
+        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
 
+        if (response.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(response.body);
+          final newHeroes = data.map((item) => HeroModel.fromJsonCard(item)).toList();
 
-      final cachedHeroes = await _getAllHeroesFromCache();
-      if (!forceRefresh && cachedHeroes.isNotEmpty) {
-        _allHeroesCache = cachedHeroes;
-        return _getLocalPage(page, limit);
-      }
+          // adiciona e salva tudo no cache
+          _allHeroesCache.addAll(newHeroes);
+          await _saveAllHeroesToCache(_allHeroesCache);
 
-
-      final online = await _hasConnection();
-      if (!online) {
-        if (cachedHeroes.isNotEmpty) {
-          print('Sem internet — carregando cache');
-          _allHeroesCache = cachedHeroes;
-          return _getLocalPage(page, limit);
+          print('Página $page carregada online (${newHeroes.length} heróis)');
+          return newHeroes;
+        } else {
+          throw Exception('Erro HTTP ${response.statusCode}');
         }
-        throw Exception('Sem conexão e sem dados em cache');
+      } on SocketException catch (_) {
+        print('Sem conexão durante requisição — usando cache');
+        return await _loadFromCache(page, limit);
+      } catch (e) {
+        print('Erro inesperado online: $e');
+        return await _loadFromCache(page, limit);
       }
-
-
-      final url = '$baseUrl/heroes';
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _allHeroesCache = data.map((item) => HeroModel.fromJsonCard(item)).toList();
-        await _saveAllHeroesToCache(_allHeroesCache!);
-        return _getLocalPage(page, limit);
-      } else {
-        throw Exception('Erro HTTP ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Erro na requisição: $e');
-      final cachedHeroes = await _getAllHeroesFromCache();
-      if (cachedHeroes.isNotEmpty) {
-        _allHeroesCache = cachedHeroes;
-        return _getLocalPage(page, limit);
-      }
-      throw Exception('Sem conexão e sem dados em cache');
+    } else {
+      print('Sem internet detectada — usando cache local');
+      return await _loadFromCache(page, limit);
     }
+  }
+
+  Future<List<HeroModel>> _loadFromCache(int page, int limit) async {
+    final cachedHeroes = await _getAllHeroesFromCache();
+    _allHeroesCache = cachedHeroes;
+    final localPage = _getLocalPage(page, limit);
+    print('Página offline $page: ${localPage.length} heróis');
+    return localPage;
   }
 
   List<HeroModel> _getLocalPage(int page, int limit) {
-    if (_allHeroesCache == null || _allHeroesCache!.isEmpty) {
-      return [];
-    }
-
+    if (_allHeroesCache.isEmpty) return [];
     final startIndex = (page - 1) * limit;
-    if (startIndex >= _allHeroesCache!.length) {
-      return [];
-    }
+    if (startIndex >= _allHeroesCache.length) return [];
 
-    final endIndex = (startIndex + limit) < _allHeroesCache!.length
-        ? (startIndex + limit)
-        : _allHeroesCache!.length;
-
-    final pageItems = _allHeroesCache!.sublist(startIndex, endIndex);
-
-    print('Página $page: itens $startIndex-${endIndex-1} de ${_allHeroesCache!.length}');
-
-
-    if (pageItems.isNotEmpty) {
-      final firstHero = pageItems.first.name;
-      final lastHero = pageItems.last.name;
-      print('   Primeiro: $firstHero, Último: $lastHero');
-    }
-
-    return pageItems;
+    final endIndex = (startIndex + limit).clamp(0, _allHeroesCache.length);
+    return _allHeroesCache.sublist(startIndex, endIndex);
   }
-
 
   Future<void> _saveAllHeroesToCache(List<HeroModel> heroes) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> heroesJson =
-      heroes.map((hero) => hero.toJson()).toList();
-
+      final heroesJson = heroes.map((hero) => hero.toJson()).toList();
       await prefs.setString('all_heroes_cache', jsonEncode(heroesJson));
-      print('${heroes.length} heróis salvos no cache persistente');
+      print('${heroes.length} heróis salvos no cache');
     } catch (e) {
       print('Erro ao salvar no cache: $e');
     }
@@ -102,49 +75,42 @@ class HeroService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString('all_heroes_cache');
+      if (cachedData == null) return [];
 
-      if (cachedData != null) {
-        final List<dynamic> data = jsonDecode(cachedData);
-        final List<HeroModel> heroes = [];
-
-        for (var item in data) {
-          try {
-            final hero = HeroModel.fromJsonCard(item);
-            heroes.add(hero);
-          } catch (e) {
-            print('Erro ao converter herói do cache: $e');
-          }
+      final List<dynamic> data = jsonDecode(cachedData);
+      final heroes = data.map((item) {
+        try {
+          return HeroModel.fromJsonCard(item);
+        } catch (_) {
+          return null;
         }
-        print(heroes);
-        return heroes;
-      }
-      return [];
+      }).whereType<HeroModel>().toList();
+
+      print('Cache carregado: ${heroes.length} heróis');
+      return heroes;
     } catch (e) {
-      print('Erro ao buscar do cache: $e');
+      print('Erro ao buscar cache: $e');
       return [];
     }
   }
-
 
   Future<void> clearCache() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('all_heroes_cache');
-      _allHeroesCache = null;
-      print('Cache limpo');
-    } catch (e) {
-      print('Erro ao limpar cache: $e');
-    }
-  }
-
-
-  Future<void> refreshCache() async {
-    _allHeroesCache = null;
-    await clearCache();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('all_heroes_cache');
+    _allHeroesCache.clear();
+    print('Cache limpo');
   }
 }
 
 Future<bool> _hasConnection() async {
-  final result = await Connectivity().checkConnectivity();
-  return result != ConnectivityResult.none;
+  try {
+    final result = await Connectivity().checkConnectivity();
+    if (result == ConnectivityResult.none) return false;
+
+    // Testa se realmente há internet
+    final response = await http.get(Uri.parse('https://www.google.com')).timeout(const Duration(seconds: 3));
+    return response.statusCode == 200;
+  } catch (_) {
+    return false;
+  }
 }

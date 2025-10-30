@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:super_app/ui/pages/batalha_page.dart';
 import 'package:super_app/ui/pages/card.dart';
 import 'package:super_app/ui/pages/hero_page.dart';
 import 'package:super_app/ui/pages/my_cards.dart';
@@ -48,13 +49,13 @@ class HomeScreen extends StatelessWidget {
         );
         break;
       case 'Batalhar':
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const BatalharPage()),
-      // );
+       Navigator.push(
+         context,
+         MaterialPageRoute(builder: (_) => const BattlePage()),
+       );
         break;
       default:
-      // Para debug - você pode remover isso depois
+
         print('Botão $buttonName pressionado (não implementado)');
     }
   }
