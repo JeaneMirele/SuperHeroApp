@@ -86,20 +86,17 @@ class _BattlePageState extends State<BattlePage> {
     });
   }
 
-  // NOVA FUNÇÃO 1: LÓGICA PARA ENCERRAR O JOGO
-  // Força o índice a ir para o final, fazendo a tela de "Fim de Jogo" aparecer.
   void _endGame() {
     setState(() {
       myIndex = myCards.length;
     });
   }
 
-  // NOVA FUNÇÃO 2: MOSTRA UM DIÁLOGO DE CONFIRMAÇÃO
-  // Garante que o usuário não encerre o jogo acidentalmente.
+
   Future<void> _showEndGameDialog() async {
     return showDialog<void>(
       context: context,
-      barrierDismissible: true, // Permite fechar clicando fora
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Encerrar Jogo?'),
@@ -118,11 +115,11 @@ class _BattlePageState extends State<BattlePage> {
                 Navigator.of(context).pop();
               },
             ),
-            FilledButton( // Botão com mais destaque para a ação principal
+            FilledButton(
               child: const Text('Encerrar'),
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-                _endGame(); // Chama a função que encerra o jogo
+                Navigator.of(context).pop();
+                _endGame();
               },
             ),
           ],
@@ -157,14 +154,14 @@ class _BattlePageState extends State<BattlePage> {
         title: Text(
             isGameOver ? "Fim de Jogo" : "Batalha - Round ${myIndex + 1}/${myCards.length}"
         ),
-        // BOTÃO ADICIONADO AQUI, DENTRO DA APPBAR
+
         actions: [
-          // O botão só aparece se o jogo não tiver acabado
+
           if (!isGameOver)
             IconButton(
               icon: const Icon(Icons.exit_to_app),
               tooltip: 'Encerrar Jogo',
-              onPressed: _showEndGameDialog, // Chama o diálogo de confirmação
+              onPressed: _showEndGameDialog,
             ),
         ],
       ),
@@ -177,7 +174,7 @@ class _BattlePageState extends State<BattlePage> {
     );
   }
 
-  // ... O restante da classe (_buildBattle, _buildGameOver, etc.) permanece o mesmo ...
+
 
   Widget _buildBattle(CardStyle style) {
     final card = myCards[myIndex];

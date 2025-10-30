@@ -249,7 +249,7 @@ class _MyCardDetailPageState extends State<MyCardDetailPage> {
 
                   const SizedBox(height: 16),
 
-                  // Informações do Herói
+
                   Card(
                     color: colorScheme.surface,
                     elevation: 2,

@@ -63,7 +63,7 @@ class _MyCardsPageState extends State<MyCardsPage> {
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
-        // 1. O TÍTULO FICA SOZINHO AQUI
+
         title: Text(
           'Minhas Cartas',
           style: textTheme.titleLarge?.copyWith(
@@ -74,9 +74,8 @@ class _MyCardsPageState extends State<MyCardsPage> {
         backgroundColor: colorScheme.primary,
         iconTheme: IconThemeData(color: colorScheme.onPrimary),
 
-        // 2. A LISTA DE AÇÕES (BOTÕES) VEM DEPOIS, COMO UM PARÂMETRO DO APPBAR
         actions: [
-          // Botão de depuração que só aparece em modo de desenvolvimento
+
           if (kDebugMode)
             IconButton(
               icon: const Icon(Icons.science_outlined),
@@ -86,7 +85,6 @@ class _MyCardsPageState extends State<MyCardsPage> {
                   context,
                   MaterialPageRoute(builder: (_) => const DebugPage()),
                 ).then((_) {
-                  // Recarrega as cartas quando voltar da tela de debug
                   _loadMyCards();
                 });
               },

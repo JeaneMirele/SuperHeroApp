@@ -32,13 +32,16 @@ class _DebugPageState extends State<DebugPage> {
   Future<void> _addCard() async {
     setState(() { _isLoading = true; });
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     final success = await _cardService.addRandomCardToCollectionForTesting();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Nova carta adicionada!' : 'A coleção já está cheia (15/15).'),
-          backgroundColor: success ? Colors.green : Colors.red,
+          content: Text(success ? 'Nova carta adicionada!' : 'Ação falhou. A coleção pode estar cheia.'),
+
+          backgroundColor: success ? colorScheme.primary : colorScheme.error,
         ),
       );
       await _loadCardCount();
@@ -49,14 +52,16 @@ class _DebugPageState extends State<DebugPage> {
 
   Future<void> _clearCollection() async {
     setState(() { _isLoading = true; });
+    final colorScheme = Theme.of(context).colorScheme;
 
     await _cardService.clearCollectionForTesting();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Coleção de cartas limpa!'),
-          backgroundColor: Colors.blue,
+        SnackBar(
+          content: const Text('Coleção de cartas limpa!'),
+
+          backgroundColor: colorScheme.secondary,
         ),
       );
       await _loadCardCount();
@@ -73,10 +78,16 @@ class _DebugPageState extends State<DebugPage> {
       );
     }
 
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ferramentas de Teste'),
-        backgroundColor: Colors.indigo,
+
+        backgroundColor: colorScheme.primary,
+
+        foregroundColor: colorScheme.onPrimary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -111,9 +122,10 @@ class _DebugPageState extends State<DebugPage> {
                 onPressed: _isLoading ? null : _clearCollection,
                 icon: const Icon(Icons.delete_sweep_outlined),
                 label: const Text('Limpar Coleção'),
+
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(fontSize: 16),
                 ),
@@ -129,5 +141,3 @@ class _DebugPageState extends State<DebugPage> {
     );
   }
 }
-
-

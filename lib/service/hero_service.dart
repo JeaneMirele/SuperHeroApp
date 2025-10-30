@@ -21,7 +21,7 @@ class HeroService {
           final List<dynamic> data = jsonDecode(response.body);
           final newHeroes = data.map((item) => HeroModel.fromJsonCard(item)).toList();
 
-          // adiciona e salva tudo no cache
+
           _allHeroesCache.addAll(newHeroes);
           await _saveAllHeroesToCache(_allHeroesCache);
 
@@ -107,7 +107,7 @@ Future<bool> _hasConnection() async {
     final result = await Connectivity().checkConnectivity();
     if (result == ConnectivityResult.none) return false;
 
-    // Testa se realmente há internet
+
     final response = await http.get(Uri.parse('https://www.google.com')).timeout(const Duration(seconds: 3));
     return response.statusCode == 200;
   } catch (_) {

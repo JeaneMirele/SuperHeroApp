@@ -19,7 +19,6 @@ class CardService {
 
   Future<CardModel?> getDailyCard({DateTime? now}) async {
     final prefs = await SharedPreferences.getInstance();
-
     final today = now ?? DateTime.now();
     final startOfDay = DateTime(today.year, today.month, today.day);
 
